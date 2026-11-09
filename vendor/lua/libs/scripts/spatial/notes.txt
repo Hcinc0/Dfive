@@ -1,0 +1,138 @@
+The KdTree and Octree implementations share a common interface:
+
+-- Fetch the bounds of an object.
+--
+-- @PARAM object - an object, often a dataset UID, being indexed.
+--
+-- @RETURN min,max - minimum and maximum AABB bounds for the object
+Bounds(self, object)
+
+---------------------------------------
+------------ Modifications ------------
+---------------------------------------
+
+-- Remove all objects from this index and wipe all tables.
+--
+-- @RETURN self
+Clear(self)
+
+-- An explicit rebuild function: rebuild/reorganize the structure to something
+-- more optimal.
+--
+-- @RETURN self
+Rebuild(self)
+
+-- Mark the index structure as immutable. Clearing any intermediate caches
+-- required for mutating operations. After calling, subsequent Insert and
+-- Remove operations should throw errors
+--
+-- @RETURN self
+Immutable(self)
+
+-- Add/Insert an object with a specified dimensionality into the index.
+--
+-- @PARAM object - an object, often a dataset UID, to be indexed.
+-- @PARAM aabbMin,aabbMax -- AABB dimensionality of the object.
+--
+-- @RETURN self
+Insert(self, object, aabbMin, aabbMax)
+
+-- Add/Insert an object at a specified point (at worst the index will treat the
+-- point as an AABB of no dimensions) into the index.
+--
+-- @PARAM object - an object, often a dataset UID, to be indexed.
+-- @PARAM point -- point-in-space of the object.
+--
+-- @RETURN self
+InsertPoint(object, point)
+
+-- Remove an object from the index
+--
+-- @RETURN self
+Remove(self, objectIndex)
+
+---------------------------------------
+--------------- Queries ---------------
+---------------------------------------
+
+-- Create a cache of 'things' used by the query structures. E.g., a recycled
+-- table used as a list/stack for traversal.
+--
+-- @RETURN cache - a cache of 'things'
+CreateQueryCache(self)
+
+-- Collect all objects being indexed
+--
+-- @PARAM yield - A callback function, F(object), invoked for each object.
+Each(self, yield)
+
+-- Find all indexed objects that intersect with the provided point.
+--
+-- @PARAM cache - shared query cache;
+-- @PARAM point - the point being searched;
+-- @PARAM yield - yield/callback function for each object index;
+
+--
+-- @USAGE Using callbacks:
+--    cache = tree:CreateQueryCache()
+--    ...
+--    tree:Query(point, function(object)
+--        local minBounds,maxBounds = tree:Bounds(object)
+--        ...
+--    end)
+--
+-- @USAGE Using coroutines:
+--    cache = tree:CreateQueryCache()
+--    ...
+--    for object in coroutine.wrap(function() tree:Query(cache, point, coroutine.yield) end) do
+--        local minBounds,maxBounds = tree:Bounds(object)
+--        ...
+--    end
+Query(self, cache, point, yield)
+
+-- Find all indexed objects that intersect with the ray (origin, direction)
+--
+-- @PARAM cache - shared query cache;
+-- @PARAM origin - the origin/position of the ray;
+-- @PARAM direction - the direction vector of the ray;
+-- @PARAM yield - yield/callback function for each object index;
+Raycast(self, cache, origin, direction, yield)
+
+-- Find all indexed objects that intersect with the collision bounds
+--
+-- @PARAM cache - shared query cache;
+-- @PARAM colMin - the minimum AABB of collision;
+-- @PARAM colMax - the maximum AABB of collision;
+-- @PARAM yield - yield/callback function for each object index;
+Colliding(self, cache, colMin, colMax, yield)
+
+-- Find all indexed objects that intersect with the sphere (origin, radius)
+--
+-- @PARAM cache - shared query cache;
+-- @PARAM origin - the origin/position of the sphere;
+-- @PARAM radius - the radius of the sphere;
+-- @PARAM yield - yield/callback function for each object index;
+SphereIntersection(self, cache, origin, radius, yield)
+
+-- Searches for at most the N-nearest neighbors to a given point
+--
+-- @PARAM cache - shared query cache;
+-- @PARAM point - the point being searched;
+-- @PARAM neighborList - A 'OrderedList' instance (which defines the 'N') used
+--  to sort objects by their distance to 'point'
+--
+-- @RETURN neighborList
+NearestNeighbors(self, _, point, neighborList)
+
+---------------------------------------
+---------------- Debug ----------------
+---------------------------------------
+
+-- Generate a string-representation of the index and write its contents to the
+-- printer.
+--
+-- @PARAM print - a function: f(string) that accepts some subset of the
+--                 representation.
+--
+-- @RETURN self
+Output(self, print)

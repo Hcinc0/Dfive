@@ -1,0 +1,124 @@
+stages:
+  - stage: Build
+    jobs:
+      - job: BuildLinux
+        displayName: 'Build Linux'
+        pool:
+          vmImage: 'ubuntu-18.04'
+
+        strategy:
+          matrix:
+            gcc8-Release:
+              compiler: g++-8
+              buildConfiguration: Release
+            gcc8-Debug:
+              compiler: g++-8
+              buildConfiguration: Debug
+            clang8-Release:
+              compiler: clang++-8
+              buildConfiguration: Release
+            clang8-Debug:
+              compiler: clang++-8
+              buildConfiguration: Debug
+            clang9-Release:
+              compiler: clang++-9
+              buildConfiguration: Release
+            clang9-Debug:
+              compiler: clang++-9
+              buildConfiguration: Debug
+
+        steps:
+        - script: |
+            sudo apt-get update -y
+            sudo apt-get install -y g++-8
+          displayName: Install GCC 8
+          condition: eq(variables['compiler'], 'g++-8')
+
+        - script: |
+            git submodule update --init --recursive
+            mkdir $(Build.BinariesDirectory)/build
+            cd $(Build.BinariesDirectory)/build
+            cmake $(Build.SourcesDirectory) -DCMAKE_CXX_COMPILER=$(compiler) -DCMAKE_BUILD_TYPE=$(buildConfiguration) -DCMAKE_CXX_FLAGS="-fsanitize=thread"
+          displayName: 'Prepare build'
+
+        - script: make -j 4
+          displayName: Build
+          workingDirectory: $(Build.BinariesDirectory)/build
+
+        - script: ./gtest --gtest_output=xml:gtest.log
+          workingDirectory: $(Build.BinariesDirectory)/build
+          displayName: 'Run tests'
+
+        - task: PublishTestResults@2
+          inputs:
+            testResultsFormat: 'JUnit'
+            testResultsFiles: $(Build.BinariesDirectory)/build/gtest.log
+
+############################################################
+
+      - job: BuildWindows
+        displayName: 'Build Windows'
+        pool:
+          vmImage: vs2017-win2016
+
+        strategy:
+          matrix:
+            x64-Release:
+              buildPlatform: x64
+              buildConfiguration: Release
+            x64-Debug:
+              buildPlatform: x64
+              buildConfiguration: Debug
+
+        steps:
+        - script: |
+            git submodule update --init --recursive
+            mkdir $(Build.BinariesDirectory)\build
+          displayName: 'Prepare build'
+
+        - task: CMake@1
+          displayName: 'Configure xenium'
+          inputs:
+            workingDirectory: '$(Build.BinariesDirectory)\build'
+            cmakeArgs: '$(Build.SourcesDirectory) -G "Visual Studio 15 2017" -A "$(buildPlatform)"'
+
+        - task: CMake@1
+          displayName: 'Build xenium'
+          inputs:
+            workingDirectory: '$(Build.BinariesDirectory)\build'
+            cmakeArgs: '--build . -j 4 --config $(buildConfiguration) -- /m'
+
+        - script: .\gtest.exe --gtest_output=xml:gtest.log
+          workingDirectory: '$(Build.BinariesDirectory)\build\$(buildConfiguration)'
+          displayName: 'Run Unit Tests'
+
+        - task: PublishTestResults@2
+          inputs:
+            testResultsFormat: 'JUnit'
+            testResultsFiles: $(Build.BinariesDirectory)\build\$(buildConfiguration)\gtest.log
+
+############################################################
+
+  - stage: Documentation
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+    jobs:
+    - job: Documentation
+      displayName: 'Build + deploy documentation'
+      pool:
+        vmImage: 'Ubuntu-16.04'
+      steps:
+      - script: |
+          sudo apt-get install -y doxygen graphviz
+        displayName: Apt install dependencies
+      - script: |
+          cd doc
+          doxygen
+        displayName: build doxygen
+      - script: |
+          cd doc/html
+          git init
+          git checkout --orphan gh-pages
+          git add .
+          git -c user.name='Azure' -c user.email='Azure' commit -m "Deploy xenium documentation to gh-pages"
+          git push -f -q "https://mpoeter:$(GITHUB_TOKEN)@github.com/mpoeter/xenium.git" gh-pages
+        displayName: publish GitHub pages

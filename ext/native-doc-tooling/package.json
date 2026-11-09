@@ -1,0 +1,27 @@
+{
+  "name": "native-doc-tooling",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "highlight.js": "^10.3.1",
+    "libclang": "git+https://github.com/citizenfx/node-libclang.git#v0.0.12",
+    "mdast-util-heading-range": "^2.1.4",
+    "minimatch": "^3.0.4",
+    "node-gyp": "^7.1.2",
+    "node-json-color-stringify": "^1.1.0",
+    "recursive-readdir": "^2.2.2",
+    "remark": "^13.0.0",
+    "remark-frontmatter": "^3.0.0",
+    "remark-highlight.js": "^6.0.0",
+    "remark-html": "^13.0.1",
+    "remark-parse": "^9.0.0",
+    "remark-parse-yaml": "^0.0.3",
+    "remark-stringify": "^9.0.0",
+    "sitemap": "^6.3.2",
+    "tmp": "^0.2.1",
+    "twing": "^5.0.2",
+    "unified": "^9.2.0",
+    "worker-farm": "^1.7.0"
+  }
+}

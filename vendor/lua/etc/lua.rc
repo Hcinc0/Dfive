@@ -1,0 +1,60 @@
+0  ICON  "../etc/lua.ico"
+
+#if 0
+
+#include <winver.h>
+#include "../lua.h"
+
+
+#if defined(GCC_WINDRES) || !defined(MSVC)
+VS_VERSION_INFO VERSIONINFO
+#else
+VS_VERSION_INFO VERSIONINFO MOVEABLE IMPURE LOADONCALL DISCARDABLE
+#endif
+  FILEVERSION    5,4,2,0 // LUA_VERSION_MAJOR,LUA_VERSION_MINOR,LUA_VERSION_RELEASE,0
+  PRODUCTVERSION 5,4,2,0 // LUA_VERSION_MAJOR,LUA_VERSION_MINOR,LUA_VERSION_RELEASE,0
+  FILEFLAGSMASK  VS_FFI_FILEFLAGSMASK
+#if defined(_DEBUG)
+  FILEFLAGS 1
+#else
+  FILEFLAGS 0
+#endif
+  FILEOS      VOS__WINDOWS32
+  FILETYPE    VFT_DLL
+  FILESUBTYPE 0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904b0"
+    BEGIN
+#if defined(LUA_BUILD_AS_DLL)
+      VALUE "FileDescription", "Lua Language Run Time\0"
+#elif defined(MAKE_LUAC)
+      VALUE "FileDescription", "Lua Standalone Compiler\0"
+#else
+      VALUE "FileDescription", "Lua Standalone Interpreter\0"
+#endif
+      VALUE "FileVersion", LUA_VERSION "\0"
+      VALUE "InternalName", "lua.exe\0"
+      VALUE "LegalCopyright", LUA_COPYRIGHT "\0"
+#if defined(LUA_BUILD_AS_DLL)
+      VALUE "OriginalFilename", "lua54.dll\0"
+#elif defined(MAKE_LUAC)
+      VALUE "OriginalFilename", "luac.exe\0"
+#else
+      VALUE "OriginalFilename", "lua.exe\0"
+#endif
+      VALUE "ProductName", "Lua - The Programming Language\0"
+      VALUE "ProductVersion", LUA_VERSION "\0"
+      VALUE "Comments", "www.lua.org\0"
+      VALUE "CompanyName", "Lua.org\0"
+      VALUE "Comments", "For more information visit https://www.lua.org/manual/5.4/manual.html\0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0409, 1252
+  END
+END
+
+#endif
